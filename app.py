@@ -34,12 +34,19 @@ st.markdown("""
 
 # Load Menu for the sidebar
 # [START load_menu]
+from google.cloud import firestore
+
 try:
-    with open("menu.json", "r") as f:
-        menu_items = json.load(f)
+   db = firestore.Client(database="coffee-menu")
+   docs = db.collection("menu").stream()
+   menu_items = []
+   for doc in docs:
+       item = doc.to_dict()
+       item.pop("embedding", None)
+       menu_items.append(item)
 except Exception as e:
-    st.error(f"Error loading menu: {e}")
-    menu_items = []
+   st.error(f"Error loading menu from Firestore: {e}")
+   menu_items = []
 # [END load_menu]
 
 # Sidebar Menu & Configuration
