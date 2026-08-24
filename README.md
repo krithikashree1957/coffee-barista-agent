@@ -86,15 +86,45 @@ Overview of the live Streamlit dashboard rendering the dynamic menu sidebar alon
 
 ### 1. Clone & Set Up Environment
 ```bash
-git clone [https://github.com/krithikashree1957/coffee-barista-agent.git](https://github.com/krithikashree1957/coffee-barista-agent.git)
+git clone https://github.com/krithikashree1957/coffee-barista-agent.git
 cd coffee-barista-agent
 pip install -r requirements.txt
 ```
 
+### 2. Initialize Firestore Database & Indexes
+
+```bash
+export PROJECT_ID=$(gcloud config get-value project)
+export REGION="asia-south1"
+
+# Seed Firestore vectors
+python3 seed.py
+
+# Create composite vector index
+gcloud firestore indexes composite create \
+  --collection-group=menu \
+  --query-scope=COLLECTION \
+  --database="coffee-menu" \
+  --field-config=field-path=embedding,vector-config='{"dimension":"768", "flat": "{}"}'
+```
+
+### 3. Deploy to Google Cloud Run
+
+```bash
+gcloud run deploy coffee-barista \
+  --source . \
+  --region $REGION \
+  --allow-unauthenticated \
+  --command "/cnb/lifecycle/launcher" \
+  --args "sh,-c,python3 -m streamlit run app.py --server.port=\$PORT --server.address=0.0.0.0 --server.enableCORS=false --server.enableXsrfProtection=false" \
+  --service-account "barista-agent-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+  --set-env-vars GOOGLE_GENAI_USE_ENTERPRISE=TRUE,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=global
+```
+
 ---
 
-## Author
+## 👩‍💻 Author
 
-Created by: krithikashree1957
+Created by: **Krithika Shree K**
 
-GitHub: https://github.com/krithikashree1957
+GitHub Profile: [github.com/krithikashree1957](https://github.com/krithikashree1957)
